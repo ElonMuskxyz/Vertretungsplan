@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
+    <title>Vertretungsplan Check</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #334155;
+            --accent-primary: #3b82f6;
+            --accent-secondary: #8b5cf6;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        #root {
+            min-height: 100vh;
+        }
+
+        /* Animated gradient background */
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            z-index: -1;
+        }
+
+        .gradient-bg::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 0 30px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            font-size: 48px;
+            margin-bottom: 8px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .input-section {
+            background: var(--bg-secondary);
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            animation: fadeIn 0.6s ease-out 0.2s both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .input-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-field {
+            flex: 1;
+            background: var(--bg-card);
+            border: 2px solid transparent;
+            border-radius: 16px;
+            padding: 16px 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s ease;
+            outline: none;
+            text-transform: uppercase;
+        }
+
+        .input-field::placeholder {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .input-field:focus {
+            border-color: var(--accent-primary);
+            background: var(--bg-secondary);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .date-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .date-btn {
+            flex: 1;
+            background: var(--bg-card);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: capitalize;
+        }
+
+        .date-btn:hover {
+            background: var(--bg-secondary);
+            transform: translateY(-2px);
+        }
+
+        .date-btn.active {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+        }
+
+        .check-btn {
+            width: 100%;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            border-radius: 16px;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .check-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .check-btn:hover::before {
+            left: 100%;
+        }
+
+        .check-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(59, 130, 246, 0.4);
+        }
+
+        .check-btn:active {
+            transform: translateY(0);
+        }
+
+        .check-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .status-card {
+            background: var(--bg-secondary);
+            border-radius: 24px;
+            padding: 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 2px solid;
+            text-align: center;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .status-card.success {
+            border-color: var(--accent-success);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), transparent);
+        }
+
+        .status-card.warning {
+            border-color: var(--accent-warning);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), transparent);
+        }
+
+        .status-card.danger {
+            border-color: var(--accent-danger);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), transparent);
+        }
+
+        .status-icon {
+            font-size: 56px;
+            margin-bottom: 12px;
+            animation: bounce 0.6s ease-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .status-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .status-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .entry-card {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border-left: 4px solid;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.5s ease-out;
+            animation-fill-mode: both;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .entry-card.cancelled {
+            border-color: var(--accent-danger);
+        }
+
+        .entry-card.substitute {
+            border-color: var(--accent-warning);
+        }
+
+        .entry-card.normal {
+            border-color: var(--accent-success);
+        }
+
+        .entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .entry-time {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .entry-badge {
+            padding: 6px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .entry-badge.cancelled {
+            background: var(--accent-danger);
+            color: white;
+        }
+
+        .entry-badge.substitute {
+            background: var(--accent-warning);
+            color: white;
+        }
+
+        .entry-subject {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .entry-details {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .entry-note {
+            margin-top: 12px;
+            padding: 12px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--bg-card);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-card {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid var(--accent-danger);
+            border-radius: 20px;
+            padding: 24px;
+            text-align: center;
+            animation: shake 0.5s ease-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .error-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .error-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .error-message {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 72px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .empty-message {
+            font-size: 14px;
+        }
+
+        /* Stagger animation for multiple cards */
+        .entry-card:nth-child(1) { animation-delay: 0.1s; }
+        .entry-card:nth-child(2) { animation-delay: 0.2s; }
+        .entry-card:nth-child(3) { animation-delay: 0.3s; }
+        .entry-card:nth-child(4) { animation-delay: 0.4s; }
+        .entry-card:nth-child(5) { animation-delay: 0.5s; }
+    </style>
+</head>
+<body>
+    <div class="gradient-bg"></div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [className, setClassName] = useState('');
+            const [selectedDate, setSelectedDate] = useState('today');
+            const [loading, setLoading] = useState(false);
+            const [results, setResults] = useState(null);
+            const [error, setError] = useState(null);
+
+            const formatDate = (offset) => {
+                const date = new Date();
+                date.setDate(date.getDate() + offset);
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}-${month}-${year}`;
+            };
+
+            const getDateLabel = (offset) => {
+                const date = new Date();
+                date.setDate(date.getDate() + offset);
+                const days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+                return offset === 0 ? 'Heute' : offset === 1 ? 'Morgen' : days[date.getDay()];
+            };
+
+            const checkPlan = async () => {
+                if (!className.trim()) {
+                    setError('Bitte gib deine Klasse ein!');
+                    return;
+                }
+
+                setLoading(true);
+                setError(null);
+                setResults(null);
+
+                try {
+                    // Call backend API
+                    const response = await fetch('http://localhost:5000/api/check', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            className: className.trim(),
+                            dateType: selectedDate
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Fehler beim Abrufen des Vertretungsplans');
+                    }
+
+                    const data = await response.json();
+                    setResults(data);
+                } catch (err) {
+                    console.error('Error:', err);
+                    setError('Fehler beim Abrufen des Vertretungsplans. Stelle sicher, dass das Backend läuft.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="container">
+                    <header className="header">
+                        <div className="logo">📚</div>
+                        <h1 className="title">Vertretungsplan</h1>
+                        <p className="subtitle">Kranich-Gymnasium</p>
+                    </header>
+
+                    <div className="input-section">
+                        <label className="input-label">Deine Klasse</label>
+                        <div className="input-wrapper">
+                            <input
+                                type="text"
+                                className="input-field"
+                                placeholder="z.B. 11D"
+                                value={className}
+                                onChange={(e) => setClassName(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && checkPlan()}
+                            />
+                        </div>
+
+                        <div className="date-selector">
+                            <button
+                                className={`date-btn ${selectedDate === 'today' ? 'active' : ''}`}
+                                onClick={() => setSelectedDate('today')}
+                            >
+                                {getDateLabel(0)}
+                            </button>
+                            <button
+                                className={`date-btn ${selectedDate === 'tomorrow' ? 'active' : ''}`}
+                                onClick={() => setSelectedDate('tomorrow')}
+                            >
+                                {getDateLabel(1)}
+                            </button>
+                        </div>
+
+                        <button
+                            className="check-btn"
+                            onClick={checkPlan}
+                            disabled={loading}
+                        >
+                            {loading ? 'Wird geprüft...' : 'Jetzt prüfen'}
+                        </button>
+                    </div>
+
+                    {loading && (
+                        <div className="loading">
+                            <div className="spinner"></div>
+                            <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+                                Vertretungsplan wird geladen...
+                            </p>
+                        </div>
+                    )}
+
+                    {error && (
+                        <div className="error-card">
+                            <div className="error-icon">⚠️</div>
+                            <div className="error-title">Fehler</div>
+                            <div className="error-message">{error}</div>
+                        </div>
+                    )}
+
+                    {results && !loading && (
+                        <div className="results-section">
+                            {results.hasChanges ? (
+                                <>
+                                    <div className="status-card danger">
+                                        <div className="status-icon">⚠️</div>
+                                        <div className="status-title">Änderungen vorhanden</div>
+                                        <div className="status-subtitle">
+                                            Es gibt {results.entries.length} Änderung(en) für {className}
+                                        </div>
+                                    </div>
+
+                                    {results.entries.map((entry) => (
+                                        <div
+                                            key={entry.id}
+                                            className={`entry-card ${entry.status}`}
+                                        >
+                                            <div className="entry-header">
+                                                <div className="entry-time">{entry.lesson}. Stunde</div>
+                                                <div className={`entry-badge ${entry.status}`}>
+                                                    {entry.status === 'cancelled' ? 'Entfällt' : 'Vertretung'}
+                                                </div>
+                                            </div>
+                                            <div className="entry-subject">{entry.subject}</div>
+                                            <div className="entry-details">
+                                                {entry.mentioned_classes && entry.mentioned_classes !== className.toUpperCase() && (
+                                                    <div>Betrifft: {entry.mentioned_classes}</div>
+                                                )}
+                                                {entry.teacher && <div>Vertretung: {entry.teacher}</div>}
+                                                {entry.room && <div>Raum: {entry.room}</div>}
+                                            </div>
+                                            {entry.note && (
+                                                <div className="entry-note">{entry.note}</div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </>
+                            ) : (
+                                <div className="status-card success">
+                                    <div className="status-icon">✅</div>
+                                    <div className="status-title">Alles wie geplant!</div>
+                                    <div className="status-subtitle">
+                                        Keine Änderungen für {className}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
